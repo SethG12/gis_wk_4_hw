@@ -1,0 +1,63 @@
+---
+title: "Wk_4_hw_code"
+---
+
+### Read in Global Gender Inequality Data
+### CSV to Spatial Data of the World
+### Create New Column of Difference in Inequality Between 2010 & 2019
+
+## Load Packages
+
+```{r Packages}
+library(tidyverse)
+library(sf)
+library(here)
+library(janitor)
+library(countrycode)
+# country code changes country name to code --> for joining data later
+```
+
+## Read in Data
+
+Look in csv first --> see that na values = ..
+
+Look in csv first --> can skip first 4 rows
+
+```{r Data}
+GII <- read_csv(here::here("Data", "Gender Inequality Index (GII).csv"),
+                       locale = locale(encoding = "latin1"),
+                       na = "..", skip=5)
+World <- st_read(here::here("Data", "World_Countries__Generalized_.shp"))
+```
+
+## Data Wrangling
+## Column Names
+
+Select data we want(columns) and change country name to country code using (countrycode) package
+
+We could also join it to country name, however joining to codes is preferable
+
+```{r Columns}
+GII_cols<- GII %>%
+  clean_names()%>%
+  select(country, x2019, x2010)%>%         # x2019, x2020 are the new column names(output from clean_names())
+  mutate(difference=x2019-x2010)%>%        # make a new column (diff between 2019 and 2010 columns)
+  slice(1:189,)%>%                         # look at data, see that from row 190 onward, there are aggregation data( areas, not countries) --> slice rows from 1 to 189. blank after comma means for all columns
+  mutate(iso_code=countrycode(country, origin = 'country.name', destination = 'iso2c'))    # make new column, change name to country code. 'country' = column to look in and change to code
+```
+
+##Join
+
+Joining csv to world shape file
+
+```{r Join}
+join_GII <- World %>% 
+  clean_names() %>% 
+  left_join(.,                             # . refers to World
+            GII_cols,
+            by = c("aff_iso" = "iso_code"))  
+# aff_iso from World(shp)
+# joining to
+# iso_code from GII_cols (csv)
+```
+
