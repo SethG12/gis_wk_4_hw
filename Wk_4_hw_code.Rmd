@@ -44,6 +44,7 @@ GII_cols<- GII %>%
   mutate(difference=x2019-x2010)%>%        # make a new column (diff between 2019 and 2010 columns)
   slice(1:189,)%>%                         # look at data, see that from row 190 onward, there are aggregation data( areas, not countries) --> slice rows from 1 to 189. blank after comma means for all columns
   mutate(iso_code=countrycode(country, origin = 'country.name', destination = 'iso2c'))    # make new column, change name to country code. 'country' = column to look in and change to code
+                                           # make new column --> call it iso_code
 ```
 
 ##Join
