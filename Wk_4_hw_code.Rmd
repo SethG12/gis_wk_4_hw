@@ -21,7 +21,7 @@ library(countrycode)
 
 Look in csv first --> see that na values = ..
 
-Look in csv first --> can skip first 4 rows
+Look in csv first --> can skip first 5 rows
 
 ```{r Data}
 GII <- read_csv(here::here("Data", "Gender Inequality Index (GII).csv"),
