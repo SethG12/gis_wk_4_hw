@@ -15,6 +15,9 @@ library(here)
 library(janitor)
 library(countrycode)
 # country code changes country name to code --> for joining data later
+library(plotly)
+library(tmap)
+library(tmaptools)
 ```
 
 ## Read in Data
@@ -60,5 +63,113 @@ join_GII <- World %>%
 # aff_iso from World(shp)
 # joining to
 # iso_code from GII_cols (csv)
+```
+
+## Condition for Mapping
+
+Composite measure reflecting inequality in achievement between women and men in 3 dimensions:
+reproductive health, environment and the labour market
+```{r Pre-Mapping}
+# using case_when
+# like an if statement
+# mutate - make new column
+# call it summary
+# look at difference column, 
+# when diff >0 (+ve number), write improved
+# when diff ==0 (same), write same
+# when diff is neither of those (TRUE), write worse
+join_GII2 <- join_GII %>% 
+  mutate(summary = case_when(difference > 0 ~ "improved",
+                             difference == 0 ~ "the same",
+                             TRUE ~ "worse"))
+
+```
+
+## Mapping
+
+```{r Mapping}
+
+tmap_mode("plot")
+# qtm = quick thematic map
+qtm(join_GII,
+    fill="difference")
+```
+
+## MAPPING CONTINUED
+
+More information on tm_polygons
+
+https://rdrr.io/cran/tmap/man/tm_polygons.html
+
+```{r Mapping Continued}
+
+# defining own breaks
+breaks=c(0.0,0.2,0.4,0.6,0.8,1.0)
+diffbreaks=c(-0.4,-0.3,-0.2,-0.1,0,0.1)
+
+# change GRCS to Mollewide
+# preserves size and not direction, like WGS84
+# direction is not important for this data
+join_GII = st_transform (join_GII, crs = "+proj=moll")
+
+# plot each map
+# MAP a - 2019
+tm1 <- tm_shape(join_GII)+
+  tm_polygons("x2019",
+              breaks = breaks,
+              palette = "PuBu")+
+  tm_legend(show=FALSE)+
+  tm_layout(frame=FALSE)+
+  tm_credits("(a)", position = c(0, 0.85), size = 1.5)
+# c = 0, 0.85
+# 0 = x axis (so on the LHS)
+# 0.85 = y axis ( on scale on 0 to 1- so near the top)
+
+# MAP b - 2010
+tm2 <- tm_shape(join_GII)+
+  tm_polygons("x2010",
+              breaks = breaks,
+              palette = "PuBu")+
+  tm_legend(show=FALSE)+
+  tm_layout(frame=FALSE)+
+  tm_credits("(b)", position = c(0, 0.85), size = 1.5)
+
+# Map c - diff
+tm3 <- tm_shape(join_GII) + 
+  tm_polygons("difference",
+              #style="fixed",
+              breaks=diffbreaks,
+              palette=("Blues"),
+               midpoint = NA) +  
+  # Midpoint = The value mapped to the middle color of a diverging palette.
+  # otherwise, will give error saying:
+  # Warning: Breaks contains positive and negative values. Better is to use diverging scale instead, or set auto.palette.mapping to FALSE.
+  tm_legend(show=FALSE)+
+  tm_layout(frame=FALSE)+
+  tm_credits("(c)", position=c(0,0.85), size=1.5)
+
+# legend
+legend <- tm_shape(join_GII) +
+    tm_polygons("difference",
+                 palette=("Blues"),
+               midpoint = NA) +
+    #tm_scale_bar(position=c(0.2,0.04), text.size=0.6)+
+    tm_compass(north=0, position=c(0.6,0.6))+
+    tm_layout(legend.only = TRUE, legend.position=c(0.3,0.25),asp=0.1)+
+    tm_credits("Mapped data:\nUN Gender Inequality Index\nWorld outline:\nArcGIS Hub 
+               ", position=c(0.3,0.2), just="left")+
+  tm_shape(join_GII) + 
+  tm_polygons("x2019", 
+              breaks=breaks,
+              palette="PuBu")+
+  tm_legend(show=TRUE)+
+  tm_layout(legend.only = TRUE, legend.position=c(0.1,0.1),asp=0.1)
+
+# in tmap can't make legends side by side unless use this workaround: 
+# https://github.com/r-tmap/tmap/issues/476 
+
+t=tmap_arrange(tm1, tm2, tm3, legend, ncol=2)
+t
+
 ```
 
